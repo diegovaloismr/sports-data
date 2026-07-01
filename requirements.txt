@@ -8,9 +8,11 @@ google-auth>=2.30
 streamlit>=1.38
 plotly>=5.24
 pandas>=2.2
-# pyarrow>=18 exige macOS 12+; travado em <18 para continuar instalável
-# em macOS 11 (Big Sur) sem precisar compilar do zero.
-pyarrow<18
+# pyarrow>=18 exige macOS 12+. Fixado numa versão exata (não só um teto)
+# porque, resolvendo junto com o resto do requirements.txt, o pip às
+# vezes escolhe uma versão de pyarrow<18 sem wheel pronto para macOS,
+# tentando compilar do zero e falhando sem toolchain de build instalado.
+pyarrow==17.0.0
 
 # Testes
 pytest>=8.0
