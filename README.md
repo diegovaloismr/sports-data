@@ -8,12 +8,15 @@ Fonte dos dados: 10 planilhas Google Sheets (Vagas + Modalidades/Locais +
 
 ## Status atual
 
-**Camada 1 (ETL) construída e testada** com dados sintéticos no mesmo
-formato dos exemplos reais levantados (parser de turma, de-para de locais,
-deduplicação por CPF). Ainda **não foi rodada contra as planilhas reais** —
-falta configurar as credenciais (veja abaixo). Camadas 2 (dashboard) e 3
-(relatórios) ainda não foram construídas: a ideia é validar os números da
-Camada 1 com dados reais antes de avançar, conforme combinado.
+**Camada 1 (ETL) construída, testada e validada com as planilhas reais da
+FCA.** Última sincronização: 1.221 matrículas ativas, 89 duplicatas
+resolvidas por CPF, apenas 3 avisos de qualidade de dado (linhas sem CPF
+preenchido no formulário). "Vagas preenchidas" é calculado a partir da
+contagem real de matrículas ativas (não da planilha de Vagas, que fica
+desatualizada manualmente) - "vagas ofertadas" continua vindo da planilha.
+
+Camadas 2 (dashboard) e 3 (relatórios) ainda não foram construídas - são o
+próximo passo.
 
 ## Estrutura de pastas
 
