@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Segredos e credenciais - NUNCA versionar
+.env
+*.json
+!config/*.example.json
+credentials/
+
+# Dados locais e saídas geradas
+data/*.db
+data/*.sqlite3
+exports/
+*.xlsx
+*.pdf
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,28 @@
+# Tabela de-para: liga o nome do local como ele aparece no campo de texto
+# livre da planilha de MATRÍCULA ("MARQUE A OPÇÃO DA TURMA E HORÁRIO
+# DESEJADO") ao nome oficial do local cadastrado na aba "Locais - Contatos"
+# da planilha mestre.
+#
+# Como editar:
+#   - Cada modalidade tem sua própria lista de aliases (o mesmo texto de
+#     local pode significar coisas diferentes em modalidades diferentes).
+#   - "alias" deve ser o texto EXATO do local como sai do parser de turma
+#     (já com espaços extras e aspas removidos - veja etl/turma_parser.py).
+#   - "oficial" deve bater exatamente com a coluna "Local" da aba
+#     "Locais - Contatos" da planilha mestre.
+#
+# Quando o pipeline encontrar um local no campo de turma que não está
+# listado aqui para aquela modalidade, ele NÃO descarta o registro: grava
+# a matrícula com local_id em branco e registra um aviso na tabela
+# log_erros_parsing para você mapear manualmente.
+
+modalidades:
+  futebol:
+    aliases:
+      - alias: "ARENA PH12 - FUNCIONÁRIOS"
+        oficial: "Arena Funcionários"
+
+  jiujitsu:
+    aliases:
+      - alias: "GINÁSIO O RONALDÃO"
+        oficial: "Ginásio Ronaldão"

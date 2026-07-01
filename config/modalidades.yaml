@@ -1,0 +1,37 @@
+# Cadastro das modalidades da FCA e a variável de ambiente que aponta
+# para o Sheet ID da respectiva planilha de matrícula.
+#
+# "slug" é o identificador interno usado em todo o sistema (banco de dados,
+# mapeamento de locais, parser de turma). Não altere um slug depois que já
+# existirem dados sincronizados sob ele — isso quebraria os vínculos.
+
+modalidades:
+  - slug: natacao
+    nome: "Natação"
+    env_sheet_id: FCA_SHEET_ID_NATACAO
+  - slug: futebol
+    nome: "Futebol"
+    env_sheet_id: FCA_SHEET_ID_FUTEBOL
+  - slug: basquete
+    nome: "Basquete"
+    env_sheet_id: FCA_SHEET_ID_BASQUETE
+  - slug: ginastica
+    nome: "Ginástica"
+    env_sheet_id: FCA_SHEET_ID_GINASTICA
+  - slug: voleibol
+    nome: "Voleibol"
+    env_sheet_id: FCA_SHEET_ID_VOLEIBOL
+  - slug: jiujitsu
+    nome: "Jiu-jitsu"
+    env_sheet_id: FCA_SHEET_ID_JIUJITSU
+  - slug: tenis
+    nome: "Tênis"
+    env_sheet_id: FCA_SHEET_ID_TENIS
+  - slug: triathlon
+    nome: "Triathlon"
+    env_sheet_id: FCA_SHEET_ID_TRIATHLON
+
+planilha_mestre:
+  env_sheet_id: FCA_SHEET_ID_MESTRE
+  aba_vagas: "Vagas 2026"
+  aba_locais: "Locais - Contatos"

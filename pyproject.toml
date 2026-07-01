@@ -1,0 +1,9 @@
+[project]
+name = "fca-data-system"
+version = "0.1.0"
+description = "Sistema de tratamento de dados e BI da Fundação Campeões do Amanhã"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
