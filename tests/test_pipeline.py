@@ -191,11 +191,22 @@ def test_sync_completo_com_dados_em_memoria(settings, reader):
         # mesmo sem sheet_id de matrícula configurado (vagas sincroniza independente).
         from fca.db.models import Vaga
 
-        vaga_triathlon = (
-            session.query(Vaga)
-            .join(Vaga.modalidade)
-            .filter_by(slug="triathlon")
-            .one_or_none()
-        )
+        def _vaga(slug):
+            return session.query(Vaga).join(Vaga.modalidade).filter_by(slug=slug).one_or_none()
+
+        # Triathlon não tem sheet_id de matrícula configurado nesta rodada,
+        # então "vagas_preenchidas" continua vindo direto da planilha de Vagas.
+        vaga_triathlon = _vaga("triathlon")
         assert vaga_triathlon is not None
         assert vaga_triathlon.vagas_preenchidas == 15
+
+        # Futebol e Jiu-jitsu TÊM sheet_id de matrícula sincronizado, então
+        # "vagas_preenchidas" é recalculado a partir da contagem real de
+        # matrículas ativas (já deduplicadas) - não confia mais no número
+        # da planilha de Vagas (que pode estar desatualizado).
+        vaga_futebol = _vaga("futebol")
+        assert vaga_futebol.vagas_preenchidas == 2  # 3 linhas brutas - 1 duplicata
+        assert vaga_futebol.ocupacao_pct == 1.0  # 2 / 200 ofertadas
+
+        vaga_jiujitsu = _vaga("jiujitsu")
+        assert vaga_jiujitsu.vagas_preenchidas == 1

@@ -341,6 +341,21 @@ def _sincroniza_matriculas_modalidade(
         ))
 
 
+def _recalcula_vagas_preenchidas(session: Session, modalidade: Modalidade) -> None:
+    """Sobrescreve 'vagas_preenchidas' com a contagem real de matrículas
+    ativas já deduplicadas por CPF, em vez de confiar no número digitado
+    manualmente na planilha de Vagas (que fica desatualizado com o tempo).
+    Só roda para modalidades com planilha de matrícula sincronizada nesta
+    rodada - sem isso não temos como calcular o número real.
+    """
+    vaga = session.query(Vaga).filter_by(modalidade_id=modalidade.id).one_or_none()
+    if vaga is None:
+        return
+    vaga.vagas_preenchidas = session.query(Matricula).filter_by(modalidade_id=modalidade.id).count()
+    if vaga.vagas_ofertadas:
+        vaga.ocupacao_pct = round(vaga.vagas_preenchidas / vaga.vagas_ofertadas * 100, 1)
+
+
 def run_sync(settings: Settings, reader: SheetsReader, session_factory: sessionmaker[Session]) -> RelatorioSync:
     relatorio = RelatorioSync()
     with session_factory() as session:
@@ -356,6 +371,7 @@ def run_sync(settings: Settings, reader: SheetsReader, session_factory: sessionm
                 continue
             modalidade = modalidade_por_slug[m.slug]
             _sincroniza_matriculas_modalidade(session, m, modalidade, reader, locais_mapping, relatorio)
+            _recalcula_vagas_preenchidas(session, modalidade)
 
         session.commit()
     return relatorio

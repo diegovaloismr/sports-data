@@ -53,8 +53,10 @@ modalidades:
       - alias: "TURMA ÚNICA"
         oficial: "UFPB - Pista de Atletismo"
 
-  # Ginástica: "GINÁSIO DO UNIPÊ" aparece em ~106 matrículas mas NÃO existe
-  # local com esse nome (nem parecido) na aba "Locais - Contatos" - só há
-  # "APCEF" cadastrado para Ginástica. Falta cadastrar esse local na
-  # planilha mestre antes de eu conseguir mapear (não vou inventar
-  # endereço/contato). Ver aviso correspondente no README/relatório de sync.
+  ginastica:
+    aliases:
+      # "Ginásio do Unipê" é o apelido usado pelas famílias para o APCEF
+      # (bairro Altiplano) - mesmo local cadastrado como "APCEF" na aba
+      # "Locais - Contatos", confirmado com o assessor.
+      - alias: "GINÁSIO DO UNIPÊ"
+        oficial: "APCEF"
