@@ -158,6 +158,14 @@ Não precisa reiniciar nada — o arquivo é recarregado a cada `sync`.
 streamlit run src/fca/dashboard/app.py
 ```
 
+Se isso travar com "segmentation fault" logo ao abrir no navegador (visto
+em macOS 11 com `pyarrow` - bug de inicialização fora da thread principal),
+use esta entrada alternativa em vez da acima:
+
+```bash
+python3 scripts/run_dashboard.py
+```
+
 Abre em `http://localhost:8501`. Ele lê direto do `data/fca.db` já
 sincronizado - rode `python scripts/sync.py sync` antes (ou de novo,
 quando quiser atualizar os números) e dê refresh na página.
