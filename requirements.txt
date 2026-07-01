@@ -4,5 +4,10 @@ python-dotenv>=1.0
 gspread>=6.0
 google-auth>=2.30
 
+# Camada 2 - dashboard
+streamlit>=1.38
+plotly>=5.24
+pandas>=2.2
+
 # Testes
 pytest>=8.0

@@ -15,8 +15,9 @@ preenchido no formulário). "Vagas preenchidas" é calculado a partir da
 contagem real de matrículas ativas (não da planilha de Vagas, que fica
 desatualizada manualmente) - "vagas ofertadas" continua vindo da planilha.
 
-Camadas 2 (dashboard) e 3 (relatórios) ainda não foram construídas - são o
-próximo passo.
+**Camada 2 (dashboard) construída** - visão geral com KPIs, ocupação por
+modalidade e indicadores de qualidade de dado (ver "Como rodar o
+dashboard" abaixo). Camada 3 (relatórios em Excel/PDF) é o próximo passo.
 
 ## Estrutura de pastas
 
@@ -37,7 +38,10 @@ sports-data/
 │   │   ├── dedup.py            # deduplicação por CPF (reenvio de formulário)
 │   │   ├── sheets_client.py    # conector Google Sheets (gspread)
 │   │   └── pipeline.py         # orquestra tudo acima em um sync completo
-│   ├── dashboard/              # Camada 2 — ainda não implementada
+│   ├── dashboard/
+│   │   ├── data.py             # consultas de leitura reutilizáveis (KPIs, overview por modalidade)
+│   │   ├── theme.py            # paleta de cores (1 cor fixa por modalidade + cores de status)
+│   │   └── app.py              # app Streamlit - visão geral
 │   └── reports/                # Camada 3 — ainda não implementada
 ├── scripts/sync.py             # CLI: init-db / sync
 ├── tests/                      # testes automatizados (pytest)
@@ -148,13 +152,28 @@ modalidades:
 
 Não precisa reiniciar nada — o arquivo é recarregado a cada `sync`.
 
+## Como rodar o dashboard
+
+```bash
+streamlit run src/fca/dashboard/app.py
+```
+
+Abre em `http://localhost:8501`. Ele lê direto do `data/fca.db` já
+sincronizado - rode `python scripts/sync.py sync` antes (ou de novo,
+quando quiser atualizar os números) e dê refresh na página.
+
+A visão geral atual mostra: matrículas ativas, vagas ofertadas, ocupação
+média, duplicatas resolvidas e avisos de qualidade pendentes (KPIs);
+ocupação por modalidade e vagas ofertadas vs. preenchidas (gráficos); e
+uma tabela de detalhamento. Cada modalidade tem uma cor fixa em todos os
+gráficos (`dashboard/theme.py`) - é a paleta padrão do sistema, troque
+pelas cores da marca da FCA quando quiser.
+
 ## Próximos passos
 
-1. Você fornece as credenciais e os 10 Sheet IDs.
-2. Rodamos `sync` contra os dados reais e validamos os números batendo
-   com o que você já sabe da planilha de Vagas (ex: Futebol = 174 vagas
-   preenchidas).
-3. Ajustamos `config/locais_mapping.yaml` para os locais que aparecerem
-   como não mapeados.
-4. Construímos a Camada 2 (dashboard) e a Camada 3 (relatórios em
-   Excel/PDF) em cima do banco já validado.
+1. Detalhamento por modalidade (distribuição por local/turma, faixa
+   etária, sexo, bairro, % de benefício social) e filtros - próxima
+   página do dashboard.
+2. Camada 3: relatórios sob demanda (lista de inscritos, lista de
+   chamada, horários consolidados, contatos de professores) exportáveis
+   em Excel e PDF.
