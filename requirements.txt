@@ -13,6 +13,11 @@ pandas>=2.2
 # vezes escolhe uma versão de pyarrow<18 sem wheel pronto para macOS,
 # tentando compilar do zero e falhando sem toolchain de build instalado.
 pyarrow==17.0.0
+# numpy 2.x muito recente (ex: 2.4) quebra a ABI binária do pyarrow 17
+# (compilado contra uma versão mais antiga da API do NumPy) - trava com
+# "segmentation fault"/"_ARRAY_API not found" em vez de um erro Python
+# normal. numpy<2 é a combinação mais testada com pyarrow/pandas.
+numpy<2
 
 # Testes
 pytest>=8.0
