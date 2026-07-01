@@ -31,7 +31,9 @@ modalidades:
     nome: "Triathlon"
     env_sheet_id: FCA_SHEET_ID_TRIATHLON
 
-planilha_mestre:
-  env_sheet_id: FCA_SHEET_ID_MESTRE
-  aba_vagas: "Vagas 2026"
-  aba_locais: "Locais - Contatos"
+# Duas planilhas dedicadas (em vez de uma mestre com 2 abas). Cada uma é
+# lida pela primeira aba - não é preciso saber o nome exato da aba.
+planilha_vagas:
+  env_sheet_id: FCA_SHEET_ID_VAGAS
+planilha_locais:
+  env_sheet_id: FCA_SHEET_ID_LOCAIS

@@ -23,9 +23,8 @@ class ModalidadeConfig:
 class Settings:
     service_account_file: Path
     database_path: Path
-    sheet_id_mestre: str | None
-    aba_vagas: str
-    aba_locais: str
+    sheet_id_vagas: str | None
+    sheet_id_locais: str | None
     modalidades: list[ModalidadeConfig]
     locais_mapping_path: Path
 
@@ -45,16 +44,14 @@ def load_settings(base_dir: Path | None = None) -> Settings:
         )
         for m in raw["modalidades"]
     ]
-    mestre = raw["planilha_mestre"]
 
     return Settings(
         service_account_file=Path(
             os.getenv("FCA_GOOGLE_SERVICE_ACCOUNT_FILE", "./credentials/service_account.json")
         ),
         database_path=Path(os.getenv("FCA_DATABASE_PATH", "./data/fca.db")),
-        sheet_id_mestre=os.getenv(mestre["env_sheet_id"]) or None,
-        aba_vagas=mestre["aba_vagas"],
-        aba_locais=mestre["aba_locais"],
+        sheet_id_vagas=os.getenv(raw["planilha_vagas"]["env_sheet_id"]) or None,
+        sheet_id_locais=os.getenv(raw["planilha_locais"]["env_sheet_id"]) or None,
         modalidades=modalidades,
         locais_mapping_path=base_dir / "config" / "locais_mapping.yaml",
     )

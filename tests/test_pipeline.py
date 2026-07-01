@@ -46,15 +46,14 @@ def _linha(**overrides):
 
 
 class FakeSheetsReader:
-    def __init__(self, abas_mestre: dict, matriculas: dict):
-        self._abas_mestre = abas_mestre  # {(sheet_id, aba_nome): [linhas]}
-        self._matriculas = matriculas  # {sheet_id: [linhas]}
+    def __init__(self, primeira_aba: dict):
+        self._primeira_aba = primeira_aba  # {sheet_id: [linhas]}
 
     def ler_aba(self, sheet_id, aba_nome):
-        return self._abas_mestre[(sheet_id, aba_nome)]
+        raise NotImplementedError("planilhas dedicadas usam ler_primeira_aba")
 
     def ler_primeira_aba(self, sheet_id):
-        return self._matriculas[sheet_id]
+        return self._primeira_aba[sheet_id]
 
 
 @pytest.fixture
@@ -62,9 +61,8 @@ def settings():
     return Settings(
         service_account_file=Path("unused.json"),
         database_path=Path(":memory:"),
-        sheet_id_mestre="sheet_mestre",
-        aba_vagas="Vagas 2026",
-        aba_locais="Locais - Contatos",
+        sheet_id_vagas="sheet_vagas",
+        sheet_id_locais="sheet_locais",
         modalidades=[
             ModalidadeConfig(slug="futebol", nome="Futebol", sheet_id="sheet_futebol"),
             ModalidadeConfig(slug="jiujitsu", nome="Jiu-jitsu", sheet_id="sheet_jiujitsu"),
@@ -76,8 +74,8 @@ def settings():
 
 @pytest.fixture
 def reader():
-    abas_mestre = {
-        ("sheet_mestre", "Locais - Contatos"): [
+    primeira_aba = {
+        "sheet_locais": [
             {
                 "Modalidade": "Futebol",
                 "Local": "Arena Funcionários",
@@ -93,14 +91,11 @@ def reader():
                 "Professores Responsáveis / Contato": "Prof. Maria - (83) 90000-1111",
             },
         ],
-        ("sheet_mestre", "Vagas 2026"): [
+        "sheet_vagas": [
             {"Modalidade Esportiva": "Futebol", "Vagas Ofertadas": "200", "Vagas Preenchidas": "174", "Ocupação (%)": "87"},
             {"Modalidade Esportiva": "Jiu-jitsu", "Vagas Ofertadas": "60", "Vagas Preenchidas": "60", "Ocupação (%)": "100"},
             {"Modalidade Esportiva": "TOTAL", "Vagas Ofertadas": "260", "Vagas Preenchidas": "234", "Ocupação (%)": "90"},
         ],
-    }
-
-    matriculas = {
         "sheet_futebol": [
             _linha(
                 **{
@@ -143,7 +138,7 @@ def reader():
         ],
     }
 
-    return FakeSheetsReader(abas_mestre, matriculas)
+    return FakeSheetsReader(primeira_aba)
 
 
 def test_sync_completo_com_dados_em_memoria(settings, reader):

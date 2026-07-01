@@ -3,8 +3,8 @@
 Sistema de tratamento de dados e BI para a FCA (João Pessoa/PB): natação,
 futebol, basquete, ginástica, voleibol, jiu-jitsu, tênis e triathlon.
 
-Fonte dos dados: 9 planilhas Google Sheets (1 mestre + 8 de matrícula, uma
-por modalidade), lidas ao vivo via Google Sheets API.
+Fonte dos dados: 10 planilhas Google Sheets (Vagas + Modalidades/Locais +
+8 de matrícula, uma por modalidade), lidas ao vivo via Google Sheets API.
 
 ## Status atual
 
@@ -21,7 +21,7 @@ Camada 1 com dados reais antes de avançar, conforme combinado.
 sports-data/
 ├── config/
 │   ├── modalidades.yaml       # cadastro das 8 modalidades + variável de ambiente do Sheet ID de cada uma
-│   └── locais_mapping.yaml    # de-para "nome do local na matrícula" -> "nome oficial na planilha mestre"
+│   └── locais_mapping.yaml    # de-para "nome do local na matrícula" -> "nome oficial na planilha de Locais"
 ├── src/fca/
 │   ├── config.py               # carrega .env + YAMLs em um objeto Settings
 │   ├── db/
@@ -46,9 +46,9 @@ sports-data/
 | Tabela | O que guarda |
 |---|---|
 | `modalidades` | As 8 modalidades. |
-| `locais` | Locais oficiais por modalidade (aba "Locais - Contatos"). |
+| `locais` | Locais oficiais por modalidade (planilha de Modalidades/Locais). |
 | `locais_aliases` | De-para carregado de `config/locais_mapping.yaml`. |
-| `vagas` | Vagas ofertadas/preenchidas por modalidade (aba "Vagas 2026"). |
+| `vagas` | Vagas ofertadas/preenchidas por modalidade (planilha de Vagas). |
 | `atletas` | Uma linha por CPF normalizado (pessoa única). |
 | `matriculas` | Matrícula **ativa** (já deduplicada) de um atleta em uma modalidade. |
 | `matriculas_descartadas` | Log de auditoria: todo registro superado por reenvio de formulário. Nada é apagado, só deixa de contar como ativo. |
@@ -95,19 +95,19 @@ O sistema lê as planilhas via **Service Account** do Google Cloud:
 1. Crie (ou peça para criar) um projeto no Google Cloud Console, habilite
    a **Google Sheets API** e a **Google Drive API**.
 2. Crie uma Service Account e gere uma chave JSON.
-3. **Compartilhe cada uma das 9 planilhas** (a mestre + as 8 de matrícula)
-   com o e-mail da Service Account (algo como
+3. **Compartilhe cada uma das 10 planilhas** (Vagas, Modalidades/Locais e
+   as 8 de matrícula) com o e-mail da Service Account (algo como
    `nome@projeto.iam.gserviceaccount.com`), como leitor.
 4. Salve o JSON localmente, por exemplo em `credentials/service_account.json`
    (essa pasta já está no `.gitignore` — nunca commite esse arquivo).
 5. Copie `.env.example` para `.env` e preencha:
    - `FCA_GOOGLE_SERVICE_ACCOUNT_FILE`: caminho para o JSON.
-   - `FCA_SHEET_ID_MESTRE` e um `FCA_SHEET_ID_<MODALIDADE>` para cada uma
-     das 8 planilhas de matrícula. O Sheet ID é o trecho da URL entre
-     `/d/` e `/edit` (ex: `docs.google.com/spreadsheets/d/ESTE_TRECHO/edit`).
+   - `FCA_SHEET_ID_VAGAS`, `FCA_SHEET_ID_LOCAIS` e um `FCA_SHEET_ID_<MODALIDADE>`
+     para cada uma das 8 planilhas de matrícula. O Sheet ID é o trecho da
+     URL entre `/d/` e `/edit` (ex: `docs.google.com/spreadsheets/d/ESTE_TRECHO/edit`).
 
 Não tenho como validar isso sem esses IDs — me passe as credenciais e os
-9 IDs (pode ser um por vez, o sistema roda com o que estiver configurado
+10 IDs (pode ser um por vez, o sistema roda com o que estiver configurado
 e avisa quais modalidades ficaram de fora).
 
 ### 3. Inicializar e sincronizar
@@ -140,16 +140,16 @@ modalidades:
   futebol:
     aliases:
       - alias: "NOME COMO APARECE NA MATRÍCULA"
-        oficial: "Nome oficial exatamente como está na aba Locais - Contatos"
+        oficial: "Nome oficial exatamente como está na planilha de Modalidades/Locais"
 ```
 
 Não precisa reiniciar nada — o arquivo é recarregado a cada `sync`.
 
 ## Próximos passos
 
-1. Você fornece as credenciais e os 9 Sheet IDs.
+1. Você fornece as credenciais e os 10 Sheet IDs.
 2. Rodamos `sync` contra os dados reais e validamos os números batendo
-   com o que você já sabe da planilha mestre (ex: Futebol = 174 vagas
+   com o que você já sabe da planilha de Vagas (ex: Futebol = 174 vagas
    preenchidas).
 3. Ajustamos `config/locais_mapping.yaml` para os locais que aparecerem
    como não mapeados.

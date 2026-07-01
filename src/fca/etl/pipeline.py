@@ -136,35 +136,38 @@ def _sincroniza_locais_e_vagas(
     modalidade_por_slug: dict[str, Modalidade],
     relatorio: RelatorioSync,
 ) -> None:
-    if not settings.sheet_id_mestre:
-        relatorio.avisos.append("FCA_SHEET_ID_MESTRE não configurado - locais e vagas não foram sincronizados.")
-        return
-
     nome_para_slug = {_normaliza_nome(m.nome): m.slug for m in settings.modalidades}
 
-    for linha in reader.ler_aba(settings.sheet_id_mestre, settings.aba_locais):
-        slug = nome_para_slug.get(_normaliza_nome(linha.get(MASTER_LOCAIS_MODALIDADE, "")))
-        nome_oficial = (linha.get(MASTER_LOCAIS_LOCAL) or "").strip()
-        if slug is None or not nome_oficial:
-            if slug is None:
-                relatorio.erros_parsing += 1
-                session.add(LogErroParsing(
-                    tipo="modalidade_nao_reconhecida",
-                    valor_bruto=linha.get(MASTER_LOCAIS_MODALIDADE),
-                    detalhe="Nome de modalidade na aba 'Locais - Contatos' não bate com config/modalidades.yaml.",
-                ))
-            continue
-        modalidade = modalidade_por_slug[slug]
-        local = session.query(Local).filter_by(modalidade_id=modalidade.id, nome_oficial=nome_oficial).one_or_none()
-        if local is None:
-            local = Local(modalidade_id=modalidade.id, nome_oficial=nome_oficial)
-            session.add(local)
-        local.endereco = linha.get(MASTER_LOCAIS_ENDERECO) or None
-        local.horarios_atendimento = linha.get(MASTER_LOCAIS_HORARIOS) or None
-        local.professores_contato = linha.get(MASTER_LOCAIS_PROFESSORES) or None
-    session.flush()
+    if not settings.sheet_id_locais:
+        relatorio.avisos.append("FCA_SHEET_ID_LOCAIS não configurado - locais não foram sincronizados.")
+    else:
+        for linha in reader.ler_primeira_aba(settings.sheet_id_locais):
+            slug = nome_para_slug.get(_normaliza_nome(linha.get(MASTER_LOCAIS_MODALIDADE, "")))
+            nome_oficial = (linha.get(MASTER_LOCAIS_LOCAL) or "").strip()
+            if slug is None or not nome_oficial:
+                if slug is None:
+                    relatorio.erros_parsing += 1
+                    session.add(LogErroParsing(
+                        tipo="modalidade_nao_reconhecida",
+                        valor_bruto=linha.get(MASTER_LOCAIS_MODALIDADE),
+                        detalhe="Nome de modalidade na planilha de Locais não bate com config/modalidades.yaml.",
+                    ))
+                continue
+            modalidade = modalidade_por_slug[slug]
+            local = session.query(Local).filter_by(modalidade_id=modalidade.id, nome_oficial=nome_oficial).one_or_none()
+            if local is None:
+                local = Local(modalidade_id=modalidade.id, nome_oficial=nome_oficial)
+                session.add(local)
+            local.endereco = linha.get(MASTER_LOCAIS_ENDERECO) or None
+            local.horarios_atendimento = linha.get(MASTER_LOCAIS_HORARIOS) or None
+            local.professores_contato = linha.get(MASTER_LOCAIS_PROFESSORES) or None
+        session.flush()
 
-    for linha in reader.ler_aba(settings.sheet_id_mestre, settings.aba_vagas):
+    if not settings.sheet_id_vagas:
+        relatorio.avisos.append("FCA_SHEET_ID_VAGAS não configurado - vagas não foram sincronizadas.")
+        return
+
+    for linha in reader.ler_primeira_aba(settings.sheet_id_vagas):
         nome_bruto = linha.get(MASTER_VAGAS_MODALIDADE, "")
         if _normaliza_nome(nome_bruto) == "TOTAL":
             continue

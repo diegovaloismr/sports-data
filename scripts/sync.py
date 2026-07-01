@@ -38,8 +38,10 @@ def cmd_sync(args: argparse.Namespace) -> None:
         )
         raise SystemExit(1)
 
-    sem_sheet_id = [m.nome for m in settings.modalidades if not m.sheet_id] + (
-        [] if settings.sheet_id_mestre else ["Planilha mestre"]
+    sem_sheet_id = (
+        [m.nome for m in settings.modalidades if not m.sheet_id]
+        + ([] if settings.sheet_id_vagas else ["Planilha Vagas"])
+        + ([] if settings.sheet_id_locais else ["Planilha Locais"])
     )
     if sem_sheet_id:
         print(f"Aviso: sem Sheet ID configurado para: {', '.join(sem_sheet_id)}. Serão pulados nesta sincronização.")
