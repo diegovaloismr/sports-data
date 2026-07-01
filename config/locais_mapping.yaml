@@ -22,7 +22,39 @@ modalidades:
       - alias: "ARENA PH12 - FUNCIONÁRIOS"
         oficial: "Arena Funcionários"
 
+  natacao:
+    aliases:
+      - alias: "CENTRO ADMINISTRATIVO MUNICIPAL"
+        oficial: "CAM"
+
+  basquete:
+    aliases:
+      - alias: "GINÁSIO O RONALDÃO"
+        oficial: "Ginásio Ronaldão"
+
+  voleibol:
+    aliases:
+      - alias: "GINÁSIO O RONALDÃO"
+        oficial: "Ginásio Ronaldão"
+
   jiujitsu:
     aliases:
       - alias: "GINÁSIO O RONALDÃO"
         oficial: "Ginásio Ronaldão"
+      - alias: "CRJ MANGABEIRA"
+        oficial: "CRJ - Mangabeira"
+      - alias: "CRJ VALENTINA"
+        oficial: "CRJ - Valentina"
+
+  triathlon:
+    aliases:
+      # O formulário de Triathlon não pede nome de local (campo de turma
+      # começa com "TURMA ÚNICA:"), e só existe 1 local oficial cadastrado.
+      - alias: "TURMA ÚNICA"
+        oficial: "UFPB - Pista de Atletismo"
+
+  # Ginástica: "GINÁSIO DO UNIPÊ" aparece em ~106 matrículas mas NÃO existe
+  # local com esse nome (nem parecido) na aba "Locais - Contatos" - só há
+  # "APCEF" cadastrado para Ginástica. Falta cadastrar esse local na
+  # planilha mestre antes de eu conseguir mapear (não vou inventar
+  # endereço/contato). Ver aviso correspondente no README/relatório de sync.

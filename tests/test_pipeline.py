@@ -27,7 +27,7 @@ COLUNAS_BASE = {
     "CIDADE": "João Pessoa",
     "ESTADO": "PB",
     "TELEFONE / WHATSAPP PARA CONTATO": "",
-    "NOME COMPLETO 2": "",
+    "NOME COMPLETO (RESPONSÁVEL)": "",
     "TELEFONE (RESPONSÁVEL)": "",
     "E-MAIL": "",
     "A FAMÍLIA RECEBE ALGUM BENEFÍCIO SOCIAL?": "NÃO",
@@ -41,19 +41,22 @@ COLUNAS_BASE = {
 def _linha(**overrides):
     linha = dict(COLUNAS_BASE)
     linha.update(overrides)
-    linha["Termo de autorização de uso de imagem"] = "Li e concordo."
+    linha["Termo de autorização"] = "Li e concordo."
     return linha
 
 
 class FakeSheetsReader:
-    def __init__(self, primeira_aba: dict):
-        self._primeira_aba = primeira_aba  # {sheet_id: [linhas]}
+    def __init__(self, dados: dict):
+        self._dados = dados  # {sheet_id: [linhas]}
 
-    def ler_aba(self, sheet_id, aba_nome):
-        raise NotImplementedError("planilhas dedicadas usam ler_primeira_aba")
+    def ler_vagas(self, sheet_id):
+        return self._dados[sheet_id]
 
-    def ler_primeira_aba(self, sheet_id):
-        return self._primeira_aba[sheet_id]
+    def ler_locais(self, sheet_id):
+        return self._dados[sheet_id]
+
+    def ler_matricula(self, sheet_id):
+        return self._dados[sheet_id]
 
 
 @pytest.fixture
@@ -64,9 +67,10 @@ def settings():
         sheet_id_vagas="sheet_vagas",
         sheet_id_locais="sheet_locais",
         modalidades=[
-            ModalidadeConfig(slug="futebol", nome="Futebol", sheet_id="sheet_futebol"),
-            ModalidadeConfig(slug="jiujitsu", nome="Jiu-jitsu", sheet_id="sheet_jiujitsu"),
-            ModalidadeConfig(slug="natacao", nome="Natação", sheet_id=None),
+            ModalidadeConfig(slug="futebol", nome="Futebol", sheet_id="sheet_futebol", aliases=[]),
+            ModalidadeConfig(slug="jiujitsu", nome="Jiu-jitsu", sheet_id="sheet_jiujitsu", aliases=[]),
+            ModalidadeConfig(slug="natacao", nome="Natação", sheet_id=None, aliases=[]),
+            ModalidadeConfig(slug="triathlon", nome="Triathlon", sheet_id=None, aliases=["Triatlo"]),
         ],
         locais_mapping_path=CONFIG_DIR / "locais_mapping.yaml",
     )
@@ -74,7 +78,7 @@ def settings():
 
 @pytest.fixture
 def reader():
-    primeira_aba = {
+    dados = {
         "sheet_locais": [
             {
                 "Modalidade": "Futebol",
@@ -94,7 +98,8 @@ def reader():
         "sheet_vagas": [
             {"Modalidade Esportiva": "Futebol", "Vagas Ofertadas": "200", "Vagas Preenchidas": "174", "Ocupação (%)": "87"},
             {"Modalidade Esportiva": "Jiu-jitsu", "Vagas Ofertadas": "60", "Vagas Preenchidas": "60", "Ocupação (%)": "100"},
-            {"Modalidade Esportiva": "TOTAL", "Vagas Ofertadas": "260", "Vagas Preenchidas": "234", "Ocupação (%)": "90"},
+            {"Modalidade Esportiva": "Triatlo", "Vagas Ofertadas": "20", "Vagas Preenchidas": "15", "Ocupação (%)": "75"},
+            {"Modalidade Esportiva": "TOTAL", "Vagas Ofertadas": "280", "Vagas Preenchidas": "249", "Ocupação (%)": "89"},
         ],
         "sheet_futebol": [
             _linha(
@@ -138,7 +143,7 @@ def reader():
         ],
     }
 
-    return FakeSheetsReader(primeira_aba)
+    return FakeSheetsReader(dados)
 
 
 def test_sync_completo_com_dados_em_memoria(settings, reader):
@@ -149,7 +154,7 @@ def test_sync_completo_com_dados_em_memoria(settings, reader):
     relatorio = run_sync(settings, reader, session_factory)
 
     # Futebol: 3 linhas brutas, 1 duplicata (Lindemberg) -> 2 matrículas ativas.
-    # Jiu-jitsu: 1 linha -> 1 matrícula ativa. Natação foi pulada (sem sheet_id).
+    # Jiu-jitsu: 1 linha -> 1 matrícula ativa. Natação/Triathlon foram pulados (sem sheet_id).
     assert relatorio.matriculas_ativas == 3
     assert relatorio.matriculas_descartadas == 1
     assert relatorio.atletas_criados_ou_atualizados == 3
@@ -181,3 +186,16 @@ def test_sync_completo_com_dados_em_memoria(settings, reader):
         erros = session.query(LogErroParsing).filter_by(tipo="local_nao_mapeado").all()
         assert len(erros) == 1
         assert erros[0].valor_bruto == "QUADRA QUE NÃO EXISTE NO CADASTRO"
+
+        # "Triatlo" (planilha de Vagas) deve resolver para o slug "triathlon" via alias,
+        # mesmo sem sheet_id de matrícula configurado (vagas sincroniza independente).
+        from fca.db.models import Vaga
+
+        vaga_triathlon = (
+            session.query(Vaga)
+            .join(Vaga.modalidade)
+            .filter_by(slug="triathlon")
+            .one_or_none()
+        )
+        assert vaga_triathlon is not None
+        assert vaga_triathlon.vagas_preenchidas == 15

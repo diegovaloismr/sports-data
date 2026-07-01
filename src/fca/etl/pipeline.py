@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+import unicodedata
 from dataclasses import dataclass, field
 
 from sqlalchemy.orm import Session, sessionmaker
@@ -24,49 +25,40 @@ from fca.db.models import (
     Modalidade,
     Vaga,
 )
+from fca.etl.columns import (
+    COL_BAIRRO,
+    COL_BENEFICIO,
+    COL_CARIMBO,
+    COL_CIDADE,
+    COL_CPF,
+    COL_EMAIL,
+    COL_ESCOLARIDADE,
+    COL_ESTADO,
+    COL_MODELO_ENSINO,
+    COL_NASCIMENTO,
+    COL_NOME,
+    COL_NOME_RESPONSAVEL,
+    COL_SEXO,
+    COL_TELEFONE,
+    COL_TELEFONE_RESPONSAVEL,
+    COL_TERMO_AUTORIZACAO,
+    COL_TURMA,
+    COL_TURNO_ESTUDO,
+    MASTER_LOCAIS_ENDERECO,
+    MASTER_LOCAIS_HORARIOS,
+    MASTER_LOCAIS_LOCAL,
+    MASTER_LOCAIS_MODALIDADE,
+    MASTER_LOCAIS_PROFESSORES,
+    MASTER_VAGAS_MODALIDADE,
+    MASTER_VAGAS_OCUPACAO,
+    MASTER_VAGAS_OFERTADAS,
+    MASTER_VAGAS_PREENCHIDAS,
+)
 from fca.etl.cpf import normalize_cpf
 from fca.etl.dedup import deduplicar_por_cpf
 from fca.etl.locais_mapping import LocaisMapping
 from fca.etl.sheets_client import SheetsReader
 from fca.etl.turma_parser import parse_turma
-
-# Nomes de coluna das 8 planilhas de matrícula (schema confirmado - 18 colunas).
-COL_CARIMBO = "Carimbo de data/hora"
-COL_NOME = "NOME COMPLETO"
-COL_NASCIMENTO = "DATA DE NASCIMENTO"
-COL_CPF = "CPF"
-COL_SEXO = "SEXO"
-COL_BAIRRO = "BAIRRO"
-COL_CIDADE = "CIDADE"
-COL_ESTADO = "ESTADO"
-COL_TELEFONE = "TELEFONE / WHATSAPP PARA CONTATO"
-COL_NOME_RESPONSAVEL = "NOME COMPLETO 2"
-COL_TELEFONE_RESPONSAVEL = "TELEFONE (RESPONSÁVEL)"
-COL_EMAIL = "E-MAIL"
-COL_BENEFICIO = "A FAMÍLIA RECEBE ALGUM BENEFÍCIO SOCIAL?"
-COL_ESCOLARIDADE = "ESCOLARIDADE"
-COL_MODELO_ENSINO = "MODELO DE ENSINO ESCOLAR DO ATLETA"
-COL_TURNO_ESTUDO = "TURNO QUE ESTUDA"
-COL_TURMA = "MARQUE A OPÇÃO DA TURMA E HORÁRIO DESEJADO"
-
-_COLUNAS_CONHECIDAS = {
-    COL_CARIMBO, COL_NOME, COL_NASCIMENTO, COL_CPF, COL_SEXO, COL_BAIRRO,
-    COL_CIDADE, COL_ESTADO, COL_TELEFONE, COL_NOME_RESPONSAVEL,
-    COL_TELEFONE_RESPONSAVEL, COL_EMAIL, COL_BENEFICIO, COL_ESCOLARIDADE,
-    COL_MODELO_ENSINO, COL_TURNO_ESTUDO, COL_TURMA,
-}
-
-# Nomes de coluna da planilha mestre.
-MASTER_VAGAS_MODALIDADE = "Modalidade Esportiva"
-MASTER_VAGAS_OFERTADAS = "Vagas Ofertadas"
-MASTER_VAGAS_PREENCHIDAS = "Vagas Preenchidas"
-MASTER_VAGAS_OCUPACAO = "Ocupação (%)"
-
-MASTER_LOCAIS_MODALIDADE = "Modalidade"
-MASTER_LOCAIS_LOCAL = "Local"
-MASTER_LOCAIS_ENDERECO = "Endereço"
-MASTER_LOCAIS_HORARIOS = "Horários de Atendimentos"
-MASTER_LOCAIS_PROFESSORES = "Professores Responsáveis / Contato"
 
 _FORMATOS_CARIMBO = ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%Y-%m-%d %H:%M:%S")
 
@@ -81,7 +73,8 @@ class RelatorioSync:
 
 
 def _normaliza_nome(texto: str) -> str:
-    return re.sub(r"\s+", " ", (texto or "").strip().upper())
+    sem_acento = unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", " ", sem_acento.strip().upper())
 
 
 def _parse_carimbo(bruto: str | None) -> dt.datetime | None:
@@ -110,11 +103,13 @@ def _to_float(bruto) -> float | None:
         return None
 
 
-def _extrai_termo_autorizacao(linha: dict) -> str | None:
-    for chave, valor in linha.items():
-        if chave not in _COLUNAS_CONHECIDAS:
-            return valor
-    return None
+def _mapa_nome_para_slug(settings: Settings) -> dict[str, str]:
+    mapa: dict[str, str] = {}
+    for m in settings.modalidades:
+        mapa[_normaliza_nome(m.nome)] = m.slug
+        for alias in m.aliases:
+            mapa[_normaliza_nome(alias)] = m.slug
+    return mapa
 
 
 def _sincroniza_modalidades(session: Session, settings: Settings) -> dict[str, Modalidade]:
@@ -136,12 +131,12 @@ def _sincroniza_locais_e_vagas(
     modalidade_por_slug: dict[str, Modalidade],
     relatorio: RelatorioSync,
 ) -> None:
-    nome_para_slug = {_normaliza_nome(m.nome): m.slug for m in settings.modalidades}
+    nome_para_slug = _mapa_nome_para_slug(settings)
 
     if not settings.sheet_id_locais:
         relatorio.avisos.append("FCA_SHEET_ID_LOCAIS não configurado - locais não foram sincronizados.")
     else:
-        for linha in reader.ler_primeira_aba(settings.sheet_id_locais):
+        for linha in reader.ler_locais(settings.sheet_id_locais):
             slug = nome_para_slug.get(_normaliza_nome(linha.get(MASTER_LOCAIS_MODALIDADE, "")))
             nome_oficial = (linha.get(MASTER_LOCAIS_LOCAL) or "").strip()
             if slug is None or not nome_oficial:
@@ -167,7 +162,7 @@ def _sincroniza_locais_e_vagas(
         relatorio.avisos.append("FCA_SHEET_ID_VAGAS não configurado - vagas não foram sincronizadas.")
         return
 
-    for linha in reader.ler_primeira_aba(settings.sheet_id_vagas):
+    for linha in reader.ler_vagas(settings.sheet_id_vagas):
         nome_bruto = linha.get(MASTER_VAGAS_MODALIDADE, "")
         if _normaliza_nome(nome_bruto) == "TOTAL":
             continue
@@ -273,7 +268,7 @@ def _trata_linha_matricula(
         "faixa_etaria_max": turma.faixa_etaria_max,
         "horario_inicio": turma.horario_inicio,
         "horario_fim": turma.horario_fim,
-        "termo_autorizacao_raw": _extrai_termo_autorizacao(linha),
+        "termo_autorizacao_raw": linha.get(COL_TERMO_AUTORIZACAO),
     }
 
 
@@ -303,7 +298,7 @@ def _sincroniza_matriculas_modalidade(
     locais_oficiais = {_normaliza_nome(l.nome_oficial): l for l in modalidade.locais}
 
     registros = []
-    for linha in reader.ler_primeira_aba(settings_modalidade.sheet_id):
+    for linha in reader.ler_matricula(settings_modalidade.sheet_id):
         registro = _trata_linha_matricula(
             linha, settings_modalidade.slug, locais_mapping, locais_oficiais, session, modalidade, relatorio
         )

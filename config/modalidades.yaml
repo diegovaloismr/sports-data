@@ -4,6 +4,11 @@
 # "slug" é o identificador interno usado em todo o sistema (banco de dados,
 # mapeamento de locais, parser de turma). Não altere um slug depois que já
 # existirem dados sincronizados sob ele — isso quebraria os vínculos.
+#
+# "aliases" (opcional) lista outras grafias do nome da modalidade que
+# aparecem nas planilhas de Vagas/Locais (ex: "Triatlo" em vez de
+# "Triathlon"). Variações só de acentuação (Tênis/Tenis) já são resolvidas
+# automaticamente e não precisam de alias.
 
 modalidades:
   - slug: natacao
@@ -29,6 +34,7 @@ modalidades:
     env_sheet_id: FCA_SHEET_ID_TENIS
   - slug: triathlon
     nome: "Triathlon"
+    aliases: ["Triatlo"]
     env_sheet_id: FCA_SHEET_ID_TRIATHLON
 
 # Duas planilhas dedicadas (em vez de uma mestre com 2 abas). Cada uma é

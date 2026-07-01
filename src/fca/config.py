@@ -17,6 +17,7 @@ class ModalidadeConfig:
     slug: str
     nome: str
     sheet_id: str | None
+    aliases: list[str]
 
 
 @dataclass
@@ -41,6 +42,7 @@ def load_settings(base_dir: Path | None = None) -> Settings:
             slug=m["slug"],
             nome=m["nome"],
             sheet_id=os.getenv(m["env_sheet_id"]) or None,
+            aliases=m.get("aliases") or [],
         )
         for m in raw["modalidades"]
     ]
